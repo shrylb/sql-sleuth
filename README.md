@@ -11,7 +11,7 @@
 
 <br />
 
-<img src="./public/banner.png" alt="SQL Sleuth: Forensic Database Academy Banner" width="100%" style="border-radius: 16px; margin: 16px 0;" />
+<img src="./public/banner.png" alt="SQL Sleuth: Forensic Database Academy Dashboard Banner" width="100%" style="border-radius: 16px; margin: 16px 0;" />
 
 <p align="center">
   <strong>Step into Precinct 42 as a cyber detective solving high-stakes cold cases across 10 progressive investigative dossiers.</strong><br>
@@ -58,7 +58,7 @@
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️️ Tech Stack
 
 | Category | Technologies & Libraries |
 | :--- | :--- |
