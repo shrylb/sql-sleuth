@@ -7,7 +7,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.x-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![SQLite WebAssembly](https://img.shields.io/badge/sql.js-Wasm_SQLite-003B57?logo=sqlite&logoColor=white)](https://sql.js.org/)
 [![Firebase](https://img.shields.io/badge/Firebase-Firestore_%26_RTDB-FFCA28?logo=firebase&logoColor=black)](https://firebase.google.com/)
-[![Vercel](https://img.shields.io/badge/Deployment-Vercel-000000?logo=vercel&logoColor=white)](https://vercel.com/)
+[![Vercel Deployment](https://img.shields.io/badge/Deployment-sql--sleuth.vercel.app-000000?logo=vercel&logoColor=white)](https://sql-sleuth.vercel.app/)
 
 <br />
 
@@ -20,7 +20,7 @@
 
 ### 🚀 Live Deployment
 > **Enter the precinct console and start cracking cases live in your browser:**  
-> ### [▶️ Play Live Demo on Vercel](https://your-app-name.vercel.app)
+> ### [▶️ Play Live Demo: SQL Sleuth: Relational Detective](https://sql-sleuth.vercel.app/)
 
 </div>
 
