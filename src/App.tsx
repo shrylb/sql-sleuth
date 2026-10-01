@@ -15,11 +15,11 @@ import { GameplayConsole } from './components/GameplayConsole';
 import { VictoryPage } from './components/VictoryPage';
 import { PrecinctDirectory } from './components/PrecinctDirectory';
 import { ResetConfirmModal } from './components/ResetConfirmModal';
+import { usePlayerProfile } from './hooks/usePlayerProfile';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from './services/firebase';
 
 const STORAGE_KEY = 'sql_sleuth_game_progress_v1';
-const PROFILE_KEY = 'sql_sleuth_user_profile_v1';
 
 export default function App() {
   // Navigation View: 'DASHBOARD' | 'INVESTIGATION' | 'VICTORY' | 'ROSTER'
@@ -35,20 +35,14 @@ export default function App() {
   const [cluesDiscovered, setCluesDiscovered] = useState<Record<number, string[]>>({});
   const [totalQueriesExecuted, setTotalQueriesExecuted] = useState<number>(0);
 
-  // User Profile
-  const [userProfile, setUserProfile] = useState<UserProfile>(() => {
-    try {
-      const saved = localStorage.getItem(PROFILE_KEY);
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.warn('Failed to parse user profile:', e);
-    }
-    return {
-      username: 'Det_Vance',
-      avatarId: 'fox',
-      rankTitle: 'Junior Sleuth',
-    };
-  });
+  // User Profile with Persistent Device User ID (prevents duplicate Firestore documents)
+  const {
+    userId,
+    userProfile,
+    setUserProfile,
+    updatePlayerProfile,
+    cleanOrphanDoc,
+  } = usePlayerProfile();
 
   // Query and execution state
   const [query, setQuery] = useState<string>('SELECT * FROM evidence_registry;');
@@ -84,14 +78,15 @@ export default function App() {
     }
   }, [calculatedRank, userProfile.rankTitle]);
 
-  // Save profile changes
+  // Save profile changes (using updatePlayerProfile which cleans legacy username documents)
   const handleUpdateProfile = (updated: UserProfile) => {
-    setUserProfile(updated);
-    try {
-      localStorage.setItem(PROFILE_KEY, JSON.stringify(updated));
-    } catch (e) {
-      console.warn('Failed to save profile:', e);
-    }
+    updatePlayerProfile({
+      username: updated.username,
+      avatarId: updated.avatarId,
+      rankTitle: updated.rankTitle,
+      score,
+      currentBadge: updated.rankTitle,
+    });
   };
 
   // Dynamic achievement badges based on game progress
@@ -328,10 +323,9 @@ export default function App() {
       console.warn('Error clearing localStorage:', e);
     }
 
-    // 4. Sync with Firebase Firestore (If Connected)
+    // 4. Sync with Firebase Firestore (target persistent userId)
     try {
-      const safeUid = `agent_${userProfile.username.toLowerCase().replace(/[^a-z0-9_]/g, '_')}`;
-      const userDocRef = doc(db, 'investigators', safeUid);
+      const userDocRef = doc(db, 'investigators', userId);
       setDoc(
         userDocRef,
         {
@@ -343,9 +337,11 @@ export default function App() {
           lastVisited: new Date().toISOString(),
         },
         { merge: true }
-      ).catch((err) => {
-        console.warn('Firestore reset sync notice:', err?.message);
-      });
+      ).catch(() => {});
+
+      // Clean legacy username document if it existed
+      cleanOrphanDoc(userProfile.username);
+      cleanOrphanDoc(`agent_${userProfile.username.toLowerCase().replace(/[^a-z0-9_]/g, '_')}`);
     } catch (e) {
       // Firebase fallback
     }
@@ -353,7 +349,7 @@ export default function App() {
     // 5. Close Modal & Redirect to Level 0 (Orientation)
     setIsResetModalOpen(false);
     setViewMode('INVESTIGATION');
-  }, [userProfile.username]);
+  }, [userId, userProfile.username, cleanOrphanDoc]);
 
   // Metrics
   const totalTasksCount = CASE_LEVELS.reduce((acc, lvl) => acc + lvl.tasks.length, 0);
@@ -378,17 +374,15 @@ export default function App() {
     const highestBadge = unlockedBadges[unlockedBadges.length - 1]?.title || userProfile.rankTitle || 'Junior Sleuth';
     const unlockedTitles = unlockedBadges.map(a => a.title);
 
-    const safeUid = `agent_${userProfile.username.toLowerCase().replace(/[^a-z0-9_]/g, '_')}`;
-
     return {
-      userId: safeUid,
+      userId, // Persistent Device User ID
       username: userProfile.username,
       avatarIcon: userProfile.avatarId,
       currentBadge: highestBadge,
       score,
       achievements: unlockedTitles.length > 0 ? unlockedTitles : ['Orientation Cleared'],
     };
-  }, [userProfile, achievements, score]);
+  }, [userId, userProfile, achievements, score]);
 
   // Launch a level from the dashboard
   const handleSelectLevelToPlay = (targetLevelIndex: number) => {
